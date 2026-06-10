@@ -29,10 +29,7 @@ const s = {
   },
   aiTitle: { fontSize: '15px', fontWeight: 600, color: '#e8f5e8' },
   aiSub: { fontSize: '12px', color: '#5a8a5a' },
-  aiText: { fontSize: '15px', color: '#9dbf9d', lineHeight: 1.7 },
-  tipList: { listStyle: 'none', marginTop: '16px' },
-  tip: { display: 'flex', gap: '10px', padding: '10px 0', borderBottom: '1px solid #1e3a1e', fontSize: '14px', color: '#9dbf9d' },
-  tipIcon: { color: '#4ade80', flexShrink: 0 },
+  aiText: { fontSize: '15px', color: '#9dbf9d', lineHeight: 1.7, whiteSpace: 'pre-wrap' },
   btnRow: { display: 'flex', gap: '12px', marginTop: '28px', flexWrap: 'wrap' },
   btnPrimary: {
     padding: '14px 28px', background: '#4ade80', color: '#060d06', border: 'none',
@@ -86,6 +83,14 @@ export default function Dashboard({ data, onRecalculate }) {
     setLoading(true);
     setAiInsight('');
     try {
+      const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+
+      if (!apiKey) {
+        setAiInsight('API key not configured. Please add REACT_APP_GEMINI_API_KEY to your environment variables.');
+        setLoading(false);
+        return;
+      }
+
       const prompt = `You are a carbon footprint advisor. A user has the following annual carbon footprint:
 - Transport: ${data.transport} kg CO₂/year (drives ${data.carKm} km/day, ${data.flights} flights/year)
 - Food: ${data.food} kg CO₂/year (diet: ${data.diet})
@@ -96,20 +101,27 @@ India average is ~1,900 kg. Global average is ~4,700 kg.
 
 Give 3 specific, actionable, personalized tips to reduce their footprint. Be concise (2-3 sentences per tip). Start each tip with a bold action verb. Be encouraging but honest.`;
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+          }),
+        }
+      );
+
       const result = await response.json();
-      const text = result.content?.map(c => c.text || '').join('') || 'Unable to load insights.';
-      setAiInsight(text);
-    } catch {
-      setAiInsight('AI insights will be available once you deploy with your API key configured.');
+
+      if (result.error) {
+        setAiInsight('Error: ' + result.error.message);
+      } else {
+        const text = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to load insights.';
+        setAiInsight(text);
+      }
+    } catch (err) {
+      setAiInsight('Could not connect to AI. Please check your API key and try again.');
     }
     setLoading(false);
   };
@@ -127,7 +139,6 @@ Give 3 specific, actionable, personalized tips to reduce their footprint. Be con
         <span style={s.badge(rating.color)}>{rating.label}</span>
       </div>
 
-      {/* Stats grid */}
       <div style={s.grid}>
         {[
           { label: 'TRANSPORT', val: data.transport, unit: 'kg/yr' },
@@ -142,7 +153,6 @@ Give 3 specific, actionable, personalized tips to reduce their footprint. Be con
         ))}
       </div>
 
-      {/* Charts row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '16px', marginBottom: '20px' }}>
         <div style={s.card}>
           <div style={s.cardTitle}>BREAKDOWN</div>
@@ -179,7 +189,6 @@ Give 3 specific, actionable, personalized tips to reduce their footprint. Be con
         </div>
       </div>
 
-      {/* AI Insights */}
       <div style={s.aiCard}>
         <div style={s.aiHeader}>
           <div style={s.aiIcon}>
@@ -189,13 +198,13 @@ Give 3 specific, actionable, personalized tips to reduce their footprint. Be con
           </div>
           <div>
             <div style={s.aiTitle}>AI-Powered Insights</div>
-            <div style={s.aiSub}>Personalized recommendations from Claude</div>
+            <div style={s.aiSub}>Personalized recommendations from Gemini AI</div>
           </div>
         </div>
 
         {loading ? (
           <div style={{ color: '#5a8a5a', fontFamily: 'var(--mono)', fontSize: '14px' }}>
-            Analyzing your footprint...
+            ✦ Analyzing your footprint...
           </div>
         ) : (
           <div style={s.aiText}>{aiInsight}</div>
