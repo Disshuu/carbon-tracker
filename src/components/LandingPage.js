@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 
 export default function LandingPage({ onStart }) {
   useEffect(() => {
@@ -127,7 +127,7 @@ export default function LandingPage({ onStart }) {
 
         {/* Buttons */}
         <div className="a4" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '48px' }}>
-          <button className="mainbtn" onClick={onStart} style={{
+          <button className="mainbtn" onClick={onStart} type="button" aria-label="Start calculating your carbon footprint" style={{
             padding: '13px 28px', background: '#4ade80', color: '#030a05',
             border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 700,
             fontFamily: "'Bricolage Grotesque',sans-serif", cursor: 'pointer',
@@ -139,7 +139,7 @@ export default function LandingPage({ onStart }) {
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </button>
-          <button className="ghostbtn" style={{
+          <button className="ghostbtn" type="button" aria-label="Scroll to learn how EcoTrace works" style={{
             padding: '13px 22px', background: 'transparent', color: '#3d6b3d',
             border: '1px solid rgba(74,222,128,0.12)', borderRadius: '10px',
             fontSize: '14px', fontWeight: 500, cursor: 'pointer',

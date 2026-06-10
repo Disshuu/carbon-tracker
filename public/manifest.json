@@ -1,0 +1,10 @@
+{
+  "short_name": "EcoTrace",
+  "name": "EcoTrace — Carbon Footprint Tracker",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#030a05",
+  "background_color": "#030a05",
+  "description": "AI-powered carbon footprint tracker with personalized insights"
+}

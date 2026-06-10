@@ -2,18 +2,15 @@ import React, { useState } from 'react';
 
 // CO2 calculation formulas (kg CO2 per year)
 const calcFootprint = (inputs) => {
-  // Transport
-  const carKm = inputs.carKm * 365 * 0.21;           // 0.21 kg CO2/km avg petrol
-  const flightsKg = inputs.flights * 255;              // 255 kg per short-haul flight
-  const bikeKg = inputs.bike * 365 * 0.003;           // negligible but real
+  const carKm = inputs.carKm * 365 * 0.21;
+  const flightsKg = inputs.flights * 255;
+  const bikeKg = inputs.bike * 365 * 0.003;
 
-  // Food
   const dietMap = { vegan: 1500, vegetarian: 1700, flexitarian: 2200, omnivore: 2800, meatHeavy: 3300 };
   const foodKg = dietMap[inputs.diet] || 2200;
 
-  // Home energy
-  const electricityKg = inputs.electricity * 12 * 0.82;  // 0.82 kg CO2/kWh (India grid)
-  const gasKg = inputs.gas * 12 * 2.04;                  // LPG cylinders
+  const electricityKg = inputs.electricity * 12 * 0.82;
+  const gasKg = inputs.gas * 12 * 2.04;
 
   const transport = Math.round(carKm + flightsKg - bikeKg);
   const food = Math.round(foodKg);
@@ -26,7 +23,6 @@ const calcFootprint = (inputs) => {
 const s = {
   page: { minHeight: '100vh', padding: '40px 24px', maxWidth: '700px', margin: '0 auto' },
   header: { marginBottom: '40px' },
-  back: { background: 'none', border: 'none', color: '#5a8a5a', cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '24px', padding: 0 },
   step: { fontFamily: 'var(--mono)', fontSize: '12px', color: '#4ade80', letterSpacing: '0.1em', marginBottom: '8px' },
   title: { fontFamily: 'var(--serif)', fontSize: '36px', fontWeight: 300, color: '#e8f5e8' },
   progress: { display: 'flex', gap: '6px', marginTop: '20px' },
@@ -45,12 +41,6 @@ const s = {
   label: { display: 'block', fontSize: '14px', color: '#9dbf9d', marginBottom: '10px', fontWeight: 500 },
   sublabel: { fontSize: '12px', color: '#5a8a5a', marginLeft: '8px', fontWeight: 400 },
   row: { display: 'flex', gap: '12px', alignItems: 'center' },
-  input: {
-    width: '100%', background: '#111f11', border: '1px solid #1e3a1e', borderRadius: '10px',
-    padding: '12px 16px', color: '#e8f5e8', fontSize: '16px', fontFamily: 'var(--mono)',
-    outline: 'none', transition: 'border-color 0.2s',
-  },
-  unit: { fontSize: '13px', color: '#5a8a5a', fontFamily: 'var(--mono)', whiteSpace: 'nowrap' },
   slider: { width: '100%', accentColor: '#4ade80', cursor: 'pointer' },
   sliderVal: { fontFamily: 'var(--mono)', fontSize: '20px', color: '#4ade80', minWidth: '48px', textAlign: 'right' },
   dietGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' },
@@ -77,6 +67,10 @@ const s = {
   },
   liveLabel: { fontSize: '13px', color: '#5a8a5a' },
   liveNum: { fontFamily: 'var(--mono)', fontSize: '24px', color: '#4ade80', fontWeight: 500 },
+  srOnly: {
+    position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px',
+    overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0,
+  },
 };
 
 const DIETS = [
@@ -101,27 +95,27 @@ export default function Calculator({ onDone }) {
   const sections = ['Transport', 'Food', 'Home Energy'];
 
   const Arrow = ({ dir = 'right' }) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {dir === 'right' ? <path d="M5 12h14M12 5l7 7-7 7" /> : <path d="M19 12H5M12 19l-7-7 7-7" />}
     </svg>
   );
 
   return (
-    <div style={s.page}>
+    <main style={s.page} role="main" aria-label="Carbon footprint calculator">
       <div style={s.header}>
-        <div style={s.step}>STEP {step + 1} OF 3 · {sections[step].toUpperCase()}</div>
+        <div style={s.step} id="step-indicator">STEP {step + 1} OF 3 · {sections[step].toUpperCase()}</div>
         <h2 style={s.title}>
           {step === 0 && 'How do you get around?'}
           {step === 1 && 'What do you eat?'}
           {step === 2 && 'Home energy use?'}
         </h2>
-        <div style={s.progress}>
+        <div style={s.progress} role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={3} aria-label="Calculator progress">
           {[0, 1, 2].map(i => <div key={i} style={s.progressDot(i === step, i < step)} />)}
         </div>
       </div>
 
       {/* Live score */}
-      <div style={s.liveScore}>
+      <div style={s.liveScore} role="status" aria-live="polite">
         <div>
           <div style={s.liveLabel}>Your footprint so far</div>
           <div style={{ fontSize: '12px', color: '#3a6a3a', marginTop: '2px' }}>
@@ -136,129 +130,148 @@ export default function Calculator({ onDone }) {
 
       {/* Step 0: Transport */}
       {step === 0 && (
-        <div style={s.card}>
-          <div style={s.sectionTitle}>Transport</div>
+        <section style={s.card} aria-labelledby="transport-heading">
+          <h3 id="transport-heading" style={s.sectionTitle}>Transport</h3>
           <div style={s.sectionSub}>Your daily travel habits</div>
 
           <div style={s.field}>
-            <label style={s.label}>
+            <label style={s.label} htmlFor="carKm">
               Car / bike travel
               <span style={s.sublabel}>km per day</span>
             </label>
             <div style={s.row}>
               <input
+                id="carKm"
                 type="range" min={0} max={200} value={inputs.carKm}
                 onChange={e => set('carKm', +e.target.value)}
                 style={s.slider}
+                aria-valuetext={`${inputs.carKm} kilometers per day`}
               />
-              <span style={s.sliderVal}>{inputs.carKm}</span>
+              <span style={s.sliderVal} aria-hidden="true">{inputs.carKm}</span>
             </div>
           </div>
 
           <div style={s.field}>
-            <label style={s.label}>
+            <label style={s.label} htmlFor="flights">
               Flights per year
               <span style={s.sublabel}>short-haul (~2hr)</span>
             </label>
             <div style={s.row}>
               <input
+                id="flights"
                 type="range" min={0} max={30} value={inputs.flights}
                 onChange={e => set('flights', +e.target.value)}
                 style={s.slider}
+                aria-valuetext={`${inputs.flights} flights per year`}
               />
-              <span style={s.sliderVal}>{inputs.flights}</span>
+              <span style={s.sliderVal} aria-hidden="true">{inputs.flights}</span>
             </div>
           </div>
 
           <div style={s.field}>
-            <label style={s.label}>
+            <label style={s.label} htmlFor="bike">
               Walk / cycle days
               <span style={s.sublabel}>days per week</span>
             </label>
             <div style={s.row}>
               <input
+                id="bike"
                 type="range" min={0} max={7} value={inputs.bike}
                 onChange={e => set('bike', +e.target.value)}
                 style={s.slider}
+                aria-valuetext={`${inputs.bike} days per week`}
               />
-              <span style={s.sliderVal}>{inputs.bike}</span>
+              <span style={s.sliderVal} aria-hidden="true">{inputs.bike}</span>
             </div>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Step 1: Food */}
       {step === 1 && (
-        <div style={s.card}>
-          <div style={s.sectionTitle}>Diet</div>
+        <section style={s.card} aria-labelledby="diet-heading">
+          <h3 id="diet-heading" style={s.sectionTitle}>Diet</h3>
           <div style={s.sectionSub}>Food production is ~25% of global emissions</div>
 
           <div style={s.field}>
-            <label style={s.label}>What best describes your diet?</label>
-            <div style={s.dietGrid}>
-              {DIETS.map(d => (
-                <button key={d.key} style={s.dietBtn(inputs.diet === d.key)} onClick={() => set('diet', d.key)}>
-                  {d.label}
-                </button>
-              ))}
-            </div>
+            <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+              <legend style={s.label}>What best describes your diet?</legend>
+              <div style={s.dietGrid} role="radiogroup" aria-label="Diet type">
+                {DIETS.map(d => (
+                  <button
+                    key={d.key}
+                    style={s.dietBtn(inputs.diet === d.key)}
+                    onClick={() => set('diet', d.key)}
+                    role="radio"
+                    aria-checked={inputs.diet === d.key}
+                    type="button"
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Step 2: Energy */}
       {step === 2 && (
-        <div style={s.card}>
-          <div style={s.sectionTitle}>Home energy</div>
+        <section style={s.card} aria-labelledby="energy-heading">
+          <h3 id="energy-heading" style={s.sectionTitle}>Home energy</h3>
           <div style={s.sectionSub}>Electricity and cooking gas usage</div>
 
           <div style={s.field}>
-            <label style={s.label}>
+            <label style={s.label} htmlFor="electricity">
               Monthly electricity
               <span style={s.sublabel}>kWh/month</span>
             </label>
             <div style={s.row}>
               <input
+                id="electricity"
                 type="range" min={0} max={600} step={10} value={inputs.electricity}
                 onChange={e => set('electricity', +e.target.value)}
                 style={s.slider}
+                aria-valuetext={`${inputs.electricity} kilowatt hours per month`}
               />
-              <span style={s.sliderVal}>{inputs.electricity}</span>
+              <span style={s.sliderVal} aria-hidden="true">{inputs.electricity}</span>
             </div>
           </div>
 
           <div style={s.field}>
-            <label style={s.label}>
+            <label style={s.label} htmlFor="gas">
               LPG cylinders/month
               <span style={s.sublabel}>14.2 kg cylinders</span>
             </label>
             <div style={s.row}>
               <input
+                id="gas"
                 type="range" min={0} max={8} step={0.5} value={inputs.gas}
                 onChange={e => set('gas', +e.target.value)}
                 style={s.slider}
+                aria-valuetext={`${inputs.gas} LPG cylinders per month`}
               />
-              <span style={s.sliderVal}>{inputs.gas}</span>
+              <span style={s.sliderVal} aria-hidden="true">{inputs.gas}</span>
             </div>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Navigation */}
-      <div style={s.navRow}>
+      <nav style={s.navRow} aria-label="Calculator navigation">
         {step > 0
-          ? <button style={s.btnSecondary} onClick={() => setStep(s => s - 1)}>← Back</button>
+          ? <button style={s.btnSecondary} onClick={() => setStep(s => s - 1)} type="button" aria-label="Go back to previous step">← Back</button>
           : <div />
         }
         {step < 2
-          ? <button style={s.btnPrimary} onClick={() => setStep(s => s + 1)}>
+          ? <button style={s.btnPrimary} onClick={() => setStep(s => s + 1)} type="button" aria-label="Go to next step">
               Next <Arrow />
             </button>
-          : <button style={s.btnPrimary} onClick={() => onDone({ ...inputs, ...fp })}>
+          : <button style={s.btnPrimary} onClick={() => onDone({ ...inputs, ...fp })} type="button" aria-label="View your carbon footprint results">
               See my results <Arrow />
             </button>
         }
-      </div>
-    </div>
+      </nav>
+    </main>
   );
 }
