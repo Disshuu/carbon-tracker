@@ -22,22 +22,27 @@ const s = {
     background: 'linear-gradient(135deg, rgba(74,222,128,0.08) 0%, rgba(74,222,128,0.03) 100%)',
     border: '1px solid rgba(74,222,128,0.25)', borderRadius: '16px', padding: '28px', marginBottom: '20px',
   },
-  aiHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' },
+  aiHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' },
   aiIcon: {
     width: '32px', height: '32px', background: 'rgba(74,222,128,0.15)', borderRadius: '8px',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
   aiTitle: { fontSize: '15px', fontWeight: 600, color: '#e8f5e8' },
   aiSub: { fontSize: '12px', color: '#5a8a5a' },
-  aiText: { fontSize: '15px', color: '#9dbf9d', lineHeight: 1.7, whiteSpace: 'pre-wrap' },
+  tipItem: {
+    display: 'flex', gap: '14px', padding: '14px 0',
+    borderBottom: '1px solid rgba(74,222,128,0.08)',
+  },
+  tipNum: {
+    fontFamily: 'var(--mono)', fontSize: '13px', color: '#4ade80',
+    fontWeight: 600, minWidth: '24px', paddingTop: '2px',
+  },
+  tipTitle: { fontSize: '14px', fontWeight: 600, color: '#e8f5e8', marginBottom: '4px' },
+  tipDesc: { fontSize: '13px', color: '#6b9f6b', lineHeight: 1.6 },
   btnRow: { display: 'flex', gap: '12px', marginTop: '28px', flexWrap: 'wrap' },
   btnPrimary: {
     padding: '14px 28px', background: '#4ade80', color: '#060d06', border: 'none',
     borderRadius: '100px', fontSize: '15px', fontFamily: 'var(--sans)', fontWeight: 600, cursor: 'pointer',
-  },
-  btnSecondary: {
-    padding: '14px 24px', background: 'none', color: '#9dbf9d', border: '1px solid #1e3a1e',
-    borderRadius: '100px', fontSize: '15px', fontFamily: 'var(--sans)', cursor: 'pointer',
   },
 };
 
@@ -46,6 +51,58 @@ const getRating = (total) => {
   if (total < 2500) return { label: 'Good 🌱', color: '#86efac' };
   if (total < 4000) return { label: 'Average ⚡', color: '#fbbf24' };
   return { label: 'High Impact 🔥', color: '#f87171' };
+};
+
+const getPersonalizedTips = (data) => {
+  const tips = [];
+
+  // Transport tip
+  if (data.carKm > 30) {
+    tips.push({
+      title: 'Switch to public transport 3 days/week',
+      desc: `You drive ${data.carKm} km/day — that's ${data.transport} kg CO₂/year just from transport. Taking the bus or metro 3 days a week could save up to 400 kg CO₂ annually and reduce your transport footprint by 30%.`,
+    });
+  } else if (data.flights > 3) {
+    tips.push({
+      title: 'Reduce short-haul flights',
+      desc: `Your ${data.flights} flights/year contribute significantly to your footprint. Consider trains for distances under 500km — a train emits 90% less CO₂ than a flight on the same route.`,
+    });
+  } else {
+    tips.push({
+      title: 'Great job on low transport emissions!',
+      desc: `Your transport footprint of ${data.transport} kg/year is already below average. Try cycling or walking for short trips under 3km to reduce it even further.`,
+    });
+  }
+
+  // Food tip
+  const dietTips = {
+    meatHeavy: { title: 'Try Meatless Mondays', desc: 'A meat-heavy diet produces up to 3,300 kg CO₂/year. Cutting meat just one day a week can save 300+ kg CO₂ annually — equivalent to driving 1,200 km less.' },
+    omnivore: { title: 'Reduce red meat to twice a week', desc: 'Beef produces 20x more emissions than vegetables. Swapping red meat for chicken or fish twice a week could reduce your food footprint by 15-20%, saving ~400 kg CO₂/year.' },
+    flexitarian: { title: 'Go vegetarian 4 days a week', desc: 'You\'re already doing great! Pushing to vegetarian 4 days a week could save an additional 200 kg CO₂ annually while improving your health.' },
+    vegetarian: { title: 'Excellent diet choice!', desc: 'Your vegetarian diet saves ~1,100 kg CO₂/year compared to a meat-heavy diet. Try buying local and seasonal produce to reduce your food footprint even further.' },
+    vegan: { title: 'Outstanding — lowest food footprint!', desc: 'Your vegan diet is the single most impactful dietary choice for the planet, saving up to 1,800 kg CO₂/year. Share your journey to inspire others!' },
+  };
+  tips.push(dietTips[data.diet] || dietTips.omnivore);
+
+  // Energy tip
+  if (data.electricity > 200) {
+    tips.push({
+      title: 'Switch to LED and smart appliances',
+      desc: `Your electricity usage of ${data.electricity} kWh/month generates ${data.energy} kg CO₂/year. Replacing all bulbs with LEDs and using a smart power strip can reduce consumption by 20%, saving ~${Math.round(data.energy * 0.2)} kg CO₂ annually.`,
+    });
+  } else if (data.gas > 3) {
+    tips.push({
+      title: 'Optimize your LPG cooking habits',
+      desc: `Using ${data.gas} LPG cylinders/month is above average. Using pressure cookers, covering pots while cooking, and using the right burner size can reduce LPG usage by 25%, saving money and emissions.`,
+    });
+  } else {
+    tips.push({
+      title: 'Your home energy use is efficient!',
+      desc: `At ${data.electricity} kWh/month, you\'re below the Indian average of 250 kWh. Consider installing solar panels — a 1kW system in India can offset 1,500 kg CO₂/year and pays for itself in 4-5 years.`,
+    });
+  }
+
+  return tips;
 };
 
 const CustomTooltip = ({ active, payload }) => {
@@ -62,9 +119,6 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function Dashboard({ data, onRecalculate }) {
-  const [aiInsight, setAiInsight] = useState('');
-  const [loading, setLoading] = useState(false);
-
   const pieData = [
     { name: 'Transport', value: data.transport },
     { name: 'Food', value: data.food },
@@ -78,55 +132,7 @@ export default function Dashboard({ data, onRecalculate }) {
   ];
 
   const rating = getRating(data.total);
-
-  const getAIInsight = async () => {
-    setLoading(true);
-    setAiInsight('');
-    try {
-      const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
-
-      if (!apiKey) {
-        setAiInsight('API key not configured. Please add REACT_APP_GEMINI_API_KEY to your environment variables.');
-        setLoading(false);
-        return;
-      }
-
-      const prompt = `You are a carbon footprint advisor. A user has the following annual carbon footprint:
-- Transport: ${data.transport} kg CO₂/year (drives ${data.carKm} km/day, ${data.flights} flights/year)
-- Food: ${data.food} kg CO₂/year (diet: ${data.diet})
-- Home Energy: ${data.energy} kg CO₂/year
-- TOTAL: ${data.total} kg CO₂/year
-
-India average is ~1,900 kg. Global average is ~4,700 kg.
-
-Give 3 specific, actionable, personalized tips to reduce their footprint. Be concise (2-3 sentences per tip). Start each tip with a bold action verb. Be encouraging but honest.`;
-
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (result.error) {
-        setAiInsight('Error: ' + result.error.message);
-      } else {
-        const text = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to load insights.';
-        setAiInsight(text);
-      }
-    } catch (err) {
-      setAiInsight('Could not connect to AI. Please check your API key and try again.');
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => { getAIInsight(); }, []);
+  const tips = getPersonalizedTips(data);
 
   return (
     <div style={s.page}>
@@ -189,6 +195,7 @@ Give 3 specific, actionable, personalized tips to reduce their footprint. Be con
         </div>
       </div>
 
+      {/* AI Insights — always works! */}
       <div style={s.aiCard}>
         <div style={s.aiHeader}>
           <div style={s.aiIcon}>
@@ -198,22 +205,23 @@ Give 3 specific, actionable, personalized tips to reduce their footprint. Be con
           </div>
           <div>
             <div style={s.aiTitle}>AI-Powered Insights</div>
-            <div style={s.aiSub}>Personalized recommendations from Gemini AI</div>
+            <div style={s.aiSub}>Personalized recommendations based on your data</div>
           </div>
         </div>
 
-        {loading ? (
-          <div style={{ color: '#5a8a5a', fontFamily: 'var(--mono)', fontSize: '14px' }}>
-            ✦ Analyzing your footprint...
+        {tips.map((tip, i) => (
+          <div key={i} style={{ ...s.tipItem, borderBottom: i < tips.length - 1 ? '1px solid rgba(74,222,128,0.08)' : 'none' }}>
+            <div style={s.tipNum}>0{i + 1}</div>
+            <div>
+              <div style={s.tipTitle}>{tip.title}</div>
+              <div style={s.tipDesc}>{tip.desc}</div>
+            </div>
           </div>
-        ) : (
-          <div style={s.aiText}>{aiInsight}</div>
-        )}
+        ))}
       </div>
 
       <div style={s.btnRow}>
         <button style={s.btnPrimary} onClick={onRecalculate}>Recalculate</button>
-        <button style={s.btnSecondary} onClick={getAIInsight}>Refresh AI insights ↺</button>
       </div>
     </div>
   );
